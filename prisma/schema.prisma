@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql" // Ensure your provider matches your database type
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  isPremium    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  products     UserProduct[]
+  notifications Notification[]
+}
+
+model Product {
+  id          Int           @id @default(autoincrement())
+  name        String
+  url         String
+  imageUrl    String?
+  currentPrice Decimal?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  users       UserProduct[]
+  priceHistory PriceHistory[]
+}
+
+model UserProduct {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  productId   Int
+  desiredPrice Decimal?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+  notifications Notification[]
+
+  @@unique([userId, productId])
+}
+
+model PriceHistory {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  price      Decimal
+  recordedAt DateTime @default(now())
+
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Notification {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  userProductId Int?
+  sentAt       DateTime @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+  userProduct UserProduct? @relation(fields: [userProductId], references: [id])
+}
